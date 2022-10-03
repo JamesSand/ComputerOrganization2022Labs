@@ -122,8 +122,6 @@ module lab2_top (
   // TODO: 同上，实现 trigger 模块，并例化
   trigger u_trigger (
     .clk     (clk_10M),
-    // .reset   (reset_of_clk10M),
-
     .push_btn (push_btn),
     .trigger  (trigger)
   );

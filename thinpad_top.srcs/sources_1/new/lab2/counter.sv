@@ -11,16 +11,16 @@ module counter (
 );
 
 reg [3:0] count_reg;
-
+ 
 // Actual logic goes here ...
 // 注意此时的敏感信号列表
 always_ff @ (posedge clk or posedge reset) begin
     if(reset) begin
         count_reg <= 4'd0;
     end else begin
-        if (trigger) begin  // 增加此处
+        if (trigger) begin  
             if (count_reg < 4'hf) begin
-                count_reg <= count_reg + 4'd1;  // 暂时忽略计数溢出
+                count_reg <= count_reg + 4'd1;  
             end
         end
     end

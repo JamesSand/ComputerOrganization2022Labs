@@ -3,17 +3,17 @@ module lab3_tb;
 
   wire clk_50M, clk_11M0592;
 
-  reg push_btn;   // BTN5 按钮开关，带消抖电路，按下时为 1
-  reg reset_btn;  // BTN6 复位按钮，带消抖电路，按下时为 1
+  reg push_btn;   // BTN5 按钮�?关，带消抖电路，按下时为 1
+  reg reset_btn;  // BTN6 复位按钮，带消抖电路，按下时�? 1
 
   reg [3:0] touch_btn; // BTN1~BTN4，按钮开关，按下时为 1
-  reg [31:0] dip_sw;   // 32 位拨码开关，拨到“ON”时为 1
+  reg [31:0] dip_sw;   // 32 位拨码开关，拨到“ON”时�? 1
 
-  wire [15:0] leds;  // 16 位 LED，输出时 1 点亮
+  wire [15:0] leds;  // 16 �? LED，输出时 1 点亮
   wire [7:0] dpy0;   // 数码管低位信号，包括小数点，输出 1 点亮
   wire [7:0] dpy1;   // 数码管高位信号，包括小数点，输出 1 点亮
 
-  // 实验 3 用到的指令格式
+  // 实验 3 用到的指令格�?
   `define inst_rtype(rd, rs1, rs2, op) \
     {7'b0, rs2, rs1, 3'b0, rd, op, 3'b001}
 
@@ -44,18 +44,20 @@ module lab3_tb;
 
   initial begin
     // 在这里可以自定义测试输入序列，例如：
+    // 将输入的串口重置�? 0
     dip_sw = 32'h0;
     touch_btn = 0;
     reset_btn = 0;
     push_btn = 0;
 
     #100;
+    // 将整个系统复�?
     reset_btn = 1;
     #100;
     reset_btn = 0;
-    #1000;  // 等待复位结束
+    #2000;  // 等待复位结束
 
-    // 样例：使用 POKE 指令为寄存器赋随机初值
+    // 样例：使�? POKE 指令为寄存器赋随机初�?
     for (int i = 1; i < 32; i = i + 1) begin
       #100;
       rd = i;   // only lower 5 bits
@@ -70,10 +72,161 @@ module lab3_tb;
 
     // TODO: 随机测试各种指令
 
+    // // add okey
+    // // r1 + r2 => r3
+    // #100;
+    // rs1 = 5'b00001;
+    // rs2 = 5'b00010;
+    // rd = 5'b00011;
+    // opcode = ADD;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+
+    // #1000;
+
+    // // subtract
+    // // r4 - r5 => r6
+    // #100;
+    // rs1 = 5'd5;
+    // rs2 = 5'd4;
+    // rd = 5'd6;
+    // opcode = SUB;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // and
+    // // r7 and r8 => r9
+    // #100;
+    // rs1 = 5'd7;
+    // rs2 = 5'd8;
+    // rd = 5'd9;
+    // opcode = AND;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // and
+    // // r7 and r8 => r9
+    // #100;
+    // rs1 = 5'd7;
+    // rs2 = 5'd8;
+    // rd = 5'd9;
+    // opcode = OR;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // and
+    // // r7 and r8 => r9
+    // #100;
+    // rs1 = 5'd7;
+    // rs2 = 5'd8;
+    // rd = 5'd9;
+    // opcode = XOR;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // not okey
+    // // r10 => r11
+    // #100;
+    // rs1 = 5'd10;
+    // rs2 = 5'd9;
+    // rd = 5'd11;
+    // opcode = NOT;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // not okey
+    // // r10 => r11
+    // #100;
+    // rs1 = 5'd10;
+    // rs2 = 5'd9;
+    // rd = 5'd11;
+    // opcode = SLL;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // not okey
+    // // r10 => r11
+    // #100;
+    // rs1 = 5'd10;
+    // rs2 = 5'd9;
+    // rd = 5'd11;
+    // opcode = SRL;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // not okey
+    // // r10 => r11
+    // #100;
+    // rs1 = 5'd10;
+    // rs2 = 5'd9;
+    // rd = 5'd11;
+    // opcode = SRA;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // // not okey
+    // // r10 => r11
+    // #100;
+    // rs1 = 5'd10;
+    // rs2 = 5'd9;
+    // rd = 5'd11;
+    // opcode = ROL;
+    // dip_sw = `inst_rtype(rd, rs1, rs2, opcode);
+    // push_btn = 1;
+
+    // #100;
+    // push_btn = 0;
+    // #1000;
+
+    // leds 检测
+    #100;
+    rs1 = 5'd1;
+    dip_sw = `inst_peek(rs1, 15'b0);
+    push_btn = 1;
+
+    #100;
+    push_btn = 0;
+    #1000;
+
     #10000 $finish;
   end
 
-  // 待测试用户设计
+  // 待测试用户设�?
   lab3_top dut (
       .clk_50M(clk_50M),
       .clk_11M0592(clk_11M0592),
@@ -114,7 +267,7 @@ module lab3_tb;
       .flash_we_n()
   );
 
-  // 时钟源
+  // 时钟�?
   clock osc (
       .clk_11M0592(clk_11M0592),
       .clk_50M    (clk_50M)

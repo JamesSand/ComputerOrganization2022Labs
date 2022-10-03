@@ -12,12 +12,6 @@ reg xiaodou_reg;
 reg trigger_reg;
 
 always_ff @ (posedge clk) begin
-    // if(push_btn) begin
-    //     trigger_reg <= 1'd1;
-    // end else begin
-    //     trigger_reg <= 1'd0;
-    // end
-
     if(xiaodou_reg == 1'd0) begin
         if(push_btn == 1'd1) begin
             // push button 的上升沿
