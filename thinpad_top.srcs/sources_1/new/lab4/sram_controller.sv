@@ -74,9 +74,6 @@ always_ff @ (posedge clk_i) begin
                 if (wb_stb_i && wb_cyc_i) begin
                     if (wb_we_i) begin
 
-                      // sram addr
-                      // combine
-
                       // data
                       sram_data_o_comb <= wb_dat_i;
                       sram_data_t_comb <= 0;
@@ -89,8 +86,6 @@ always_ff @ (posedge clk_i) begin
                       state <= STATE_WRITE;
                     end else begin
 
-                      // sram addr
-                      // combine
                       sram_data_t_comb <= 1;
 
                       // sram control
