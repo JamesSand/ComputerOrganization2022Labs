@@ -251,6 +251,7 @@ module lab4_top (
   /* =========== Lab4 MUX end =========== */
 
   /* =========== Lab4 Slaves begin =========== */
+//   same controller template for base and ext 
   sram_controller #(
       .SRAM_ADDR_WIDTH(20),
       .SRAM_DATA_WIDTH(32)
