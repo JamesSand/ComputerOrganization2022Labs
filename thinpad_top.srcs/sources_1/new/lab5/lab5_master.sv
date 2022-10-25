@@ -65,7 +65,8 @@ always_ff @( posedge clk_i ) begin
     wb_we_o <= 0;
 
     // get address
-    addr_reg <= (addr_i & 32'hFFFFFFFC);
+    // addr_reg <= (addr_i & 32'hFFFFFFFC);
+    addr_reg <= {addr_i[31 : 2] , 2'b0};
 
     // reset counter
     counter <= 4'd0;
