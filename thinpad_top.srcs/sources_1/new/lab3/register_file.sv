@@ -15,6 +15,12 @@ module register_file(
 // 二维寄存器数组
 logic [15:0] regs[31:0];
 
+
+always_comb begin
+    rdata_a <= regs[raddr_a];
+    rdata_b <= regs[raddr_b];
+end
+
 always_ff @(posedge clk) begin
     if (rst) begin
         // 输出线清零
@@ -25,10 +31,6 @@ always_ff @(posedge clk) begin
             regs[i] <= 16'b0;
         end
     end else begin
-        // 所有 reg addr 都是合法的
-        rdata_a <= regs[raddr_a];
-        rdata_b <= regs[raddr_b];
-
         if (we) begin
             if (waddr > 5'b0) begin
                 regs[waddr] <= wdata;

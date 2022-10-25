@@ -57,21 +57,27 @@ module tb;
     reset_btn = 0;
     push_btn = 0;
 
+    // reset
     #100;
     reset_btn = 1;
     #100;
     reset_btn = 0;
-    for (integer i = 0; i < 20; i = i + 1) begin
-      #100;  // 等待 100ns
-      push_btn = 1;  // 按下 push_btn 按钮
-      #100;  // 等待 100ns
-      push_btn = 0;  // 松开 push_btn 按钮
-    end
+
+    // for (integer i = 0; i < 20; i = i + 1) begin
+    //   #100;  // 等待 100ns
+    //   push_btn = 1;  // 按下 push_btn 按钮
+    //   #100;  // 等待 100ns
+    //   push_btn = 0;  // 松开 push_btn 按钮
+    // end
   
-    // 模拟 PC 通过直连串口，向 FPGA 发送字符
-    uart.pc_send_byte(8'h32); // ASCII '2'
-    #10000;
-    uart.pc_send_byte(8'h33); // ASCII '3'
+    // // 模拟 PC 通过直连串口，向 FPGA 发送字符
+    // uart.pc_send_byte(8'h32); // ASCII '2'
+    // #10000;
+    // uart.pc_send_byte(8'h33); // ASCII '3'
+
+    // 等待一段时间，结束仿真
+    #10000 $finish;
+
   end
 
   // 待测试用户设计

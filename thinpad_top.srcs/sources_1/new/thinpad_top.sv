@@ -103,25 +103,25 @@ module thinpad_top (
     else reset_of_clk10M <= 1'b0;
   end
 
-  always_ff @(posedge clk_10M or posedge reset_of_clk10M) begin
-    if (reset_of_clk10M) begin
-      // Your Code
-    end else begin
-      // Your Code
-    end
-  end
+  // always_ff @(posedge clk_10M or posedge reset_of_clk10M) begin
+  //   if (reset_of_clk10M) begin
+  //     // Your Code
+  //   end else begin
+  //     // Your Code
+  //   end
+  // end
 
-  // 不使用内存、串口时，禁用其使能信号
-  assign base_ram_ce_n = 1'b1;
-  assign base_ram_oe_n = 1'b1;
-  assign base_ram_we_n = 1'b1;
+  // // 不使用内存、串口时，禁用其使能信号
+  // assign base_ram_ce_n = 1'b1;
+  // assign base_ram_oe_n = 1'b1;
+  // assign base_ram_we_n = 1'b1;
 
-  assign ext_ram_ce_n = 1'b1;
-  assign ext_ram_oe_n = 1'b1;
-  assign ext_ram_we_n = 1'b1;
+  // assign ext_ram_ce_n = 1'b1;
+  // assign ext_ram_oe_n = 1'b1;
+  // assign ext_ram_we_n = 1'b1;
 
-  assign uart_rdn = 1'b1;
-  assign uart_wrn = 1'b1;
+  // assign uart_rdn = 1'b1;
+  // assign uart_wrn = 1'b1;
 
   // 数码管连接关系示意图，dpy1 同理
   // p=dpy0[0] // ---a---
