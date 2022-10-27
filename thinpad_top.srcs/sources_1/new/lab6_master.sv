@@ -22,6 +22,34 @@ module lab6_master #(
 
 // lab6 code below
 
+reg [31:0] pc_reg;
+reg [31:0] inst_reg;
+
+// instruction parser
+logic [6 : 0] opcode;
+logic [2 : 0] funct3;
+logic [4 : 0] rd, rs1, rs2;
+logic [11 : 0] imm;
+logic [19 : 0] imm_lui; // imm for lui instruction
+
+// instruction should be wb_dat_i
+always_comb begin
+    // opcode is 6 : 0
+    opcode = wb_dat_i[6:0];
+
+    // funct3 15:13
+    funct3 = wb_dat_i[15 : 13];
+
+    // registers
+    // rd 12 : 7
+    rd = wb_dat_i[12:7];
+
+    // imm lui
+
+    // imm
+
+end
+
 // status machine
 // four states required
 typedef enum logic [3:0] {
@@ -33,9 +61,7 @@ typedef enum logic [3:0] {
 
 state_t state;
 
-reg [31:0] pc_reg;
-reg [31:0] inst_reg;
-
+// cpu
 always_comb begin
     ...
     case(state)
