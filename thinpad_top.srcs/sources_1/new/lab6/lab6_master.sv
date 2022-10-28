@@ -23,30 +23,38 @@ module lab6_master #(
 // lab6 code below
 
 reg [31:0] pc_reg;
+reg [31:0] pc_now_reg;
 reg [31:0] inst_reg;
 
 // instruction parser
 logic [6 : 0] opcode;
 logic [2 : 0] funct3;
 logic [4 : 0] rd, rs1, rs2;
-logic [11 : 0] imm;
-logic [19 : 0] imm_lui; // imm for lui instruction
+
+logic [11:0] imm_i;
+logic [11:0] imm_s;
+logic [12:0] imm_b;
+logic [31:0] imm_u;
+
 
 // instruction should be wb_dat_i
 always_comb begin
     // opcode is 6 : 0
-    opcode = wb_dat_i[6:0];
+    opcode = inst_reg[6:0];
 
-    // funct3 15:13
-    funct3 = wb_dat_i[15 : 13];
+    // funct3 14:12
+    funct3 = inst_reg[14:12];
 
     // registers
-    // rd 12 : 7
-    rd = wb_dat_i[12:7];
-
-    // imm lui
+    rd = inst_reg[11:7];
+    rs1 = inst_reg[19:15];
+    rs2 = inst_reg[24:20];
 
     // imm
+    imm_i = inst_reg[31:20];
+    imm_s = {inst_reg[31:25], inst_reg[11:7]};
+    imm_b = {inst_reg[31], inst_reg[7], inst_reg[30:25], inst_reg[11:8], 1'b0};
+    imm_u = {inst_reg[31:12], 12'b0};
 
 end
 
@@ -68,21 +76,54 @@ always_comb begin
         STATE_IF: begin
             wb_addr_o = pc_reg;
             wb_cyc_o = 1'b1;
-            ...
+            alu_operand1_o = pc_reg;
+            alu_operand2_o = 32'h00000004;
+            alu_op_o = ALU_ADD;
+        end
+
+        STATE_ID : begin
+
+        end
+
+        STATE_EXE : begin
+
+        end
+
+        STATE_WB : begin
+
+        end
     endcase
 end
 always_ff @ (posedge clk) begin
+  if (rst_i) begin
+    // reset all signals
     ...
-        case(state)
-            STATE_IF: begin
-                inst_reg <= wb_data_i;
-                ...
-                if (wb_ack_i) begin
-                    state <= STATE_ID;
-                end
-            ...
-        endcase
-    ...
+  end else begin
+    case(state)
+      STATE_IF: begin
+          inst_reg <= wb_data_i;
+          pc_now_reg <= pc_reg;
+          ...
+          if (wb_ack_i) begin
+              pc_reg <= alu_result_i; // 注意更新的位置, wishbone请求时, addr地址不能变
+              state <= STATE_ID;
+          end
+      ...
+      end
+
+      STATE_ID :begin
+
+      end
+
+      STATE_EXE : begin
+
+      end
+
+      STATE_WB : begin
+
+      end
+    endcase
+  end
 end                    
 
 
