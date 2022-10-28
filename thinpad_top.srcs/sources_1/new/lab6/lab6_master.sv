@@ -17,6 +17,16 @@ module lab6_master #(
     input wire [DATA_WIDTH-1:0] wb_dat_i,
     output reg [DATA_WIDTH/8-1:0] wb_sel_o,
     output reg wb_we_o // 0 for read, 1 for write
+
+    // instruction load and parse
+
+    // register load
+
+    // execution
+
+    // write back
+
+
 );
 
 
@@ -27,9 +37,9 @@ reg [31:0] pc_now_reg;
 reg [31:0] inst_reg;
 
 // instruction parser
-logic [6 : 0] opcode;
-logic [2 : 0] funct3;
-logic [4 : 0] rd, rs1, rs2;
+logic [6:0] opcode;
+logic [2:0] funct3;
+logic [4:0] rd, rs1, rs2;
 
 logic [11:0] imm_i;
 logic [11:0] imm_s;
@@ -37,7 +47,7 @@ logic [12:0] imm_b;
 logic [31:0] imm_u;
 
 
-// instruction should be wb_dat_i
+// instruction should be inst_reg
 always_comb begin
     // opcode is 6 : 0
     opcode = inst_reg[6:0];
@@ -69,31 +79,42 @@ typedef enum logic [3:0] {
 
 state_t state;
 
-// cpu
-always_comb begin
-    ...
-    case(state)
-        STATE_IF: begin
-            wb_addr_o = pc_reg;
-            wb_cyc_o = 1'b1;
-            alu_operand1_o = pc_reg;
-            alu_operand2_o = 32'h00000004;
-            alu_op_o = ALU_ADD;
-        end
+// // cpu
+// always_comb begin
+//     ...
+//     case(state)
+//         STATE_IF: begin
+//             wb_addr_o = pc_reg;
+//             wb_cyc_o = 1'b1;
+//             // stb ?
+//             wb_stb_o = 1;
+//             alu_operand1_o = pc_reg;
+//             alu_operand2_o = 32'h00000004;
+//             alu_op_o = ALU_ADD;
+//         end
 
-        STATE_ID : begin
+//         STATE_ID : begin
 
-        end
+//           rf_raddr_a_o = <instruction rs1 segment>;
+//           rf_raddr_b_o = <instruction rs2 segment>;
+//           imm_gen_inst_o = <instrction segment to generate immediate>;
+//           if(<instruction is type I>) begin
+//               imm_gen_type_o = TYPE_I;
+//           end 
+//           ...
 
-        STATE_EXE : begin
 
-        end
+//         end
 
-        STATE_WB : begin
+//         STATE_EXE : begin
 
-        end
-    endcase
-end
+//         end
+
+//         STATE_WB : begin
+
+//         end
+//     endcase
+// end
 always_ff @ (posedge clk) begin
   if (rst_i) begin
     // reset all signals
@@ -101,7 +122,7 @@ always_ff @ (posedge clk) begin
   end else begin
     case(state)
       STATE_IF: begin
-          inst_reg <= wb_data_i;
+          inst_reg <= wb_data_i; // here can do so, because state if will only wait until ack = 1 to jump to state id
           pc_now_reg <= pc_reg;
           ...
           if (wb_ack_i) begin
@@ -112,6 +133,14 @@ always_ff @ (posedge clk) begin
       end
 
       STATE_ID :begin
+
+        if(<instruction is ADDI>) begin
+            operand1_reg <= rf_rdata_a_i;
+            operand2_reg <= imm_gen_imm_i;
+        end
+        ...
+        state <= STATE_EXE;
+
 
       end
 
