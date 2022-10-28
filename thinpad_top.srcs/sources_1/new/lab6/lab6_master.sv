@@ -86,12 +86,23 @@ typedef enum logic [3:0]{
   ALU_OP_SETB = 4'd11,
 } alu_op_type;
 
-typedef enum logic[1:0] { 
+// instruction opcode
+typedef enum logic[6:0] { 
+  LUI_OP = 7'b0110111,
+  BEQ_OP = 7'b1100011,
+  LB_OP = 7'b0000011,
+  SB_SW_OP = 7'b0100011,
+  ADDI_ANDI_OP = 7'b0010011,
+  ADD_OP = 7'b0110011
+} instr_opcode;
+
+typedef enum logic[2:0] { 
   TYPE_I = 0,
   TYPE_S = 1,
   TYPE_B = 2,
-  TYPE_R = 3
-} instruction_type;
+  TYPE_R = 3,
+  TYPE_U = 4
+} instr_type;
 
 // other signals and ff logics
 
@@ -104,10 +115,23 @@ logic [6:0] opcode;
 logic [2:0] funct3;
 logic [4:0] rd, rs1, rs2;
 
+logic [2:0] instruction_type;
+
 logic [11:0] imm_i;
 logic [11:0] imm_s;
 logic [12:0] imm_b;
 logic [31:0] imm_u;
+
+logic [31:0] imm_gen_i;
+
+imm_gen_lab6 u_imm_gen_lab6(
+  .imm_i(imm_i),
+  .imm_s(imm_s),
+  .imm_b(imm_b),
+  .imm_gen_type(instruction_type),
+
+  .imm_o(imm_gen_i)
+);
 
 
 // instruction should be inst_reg
@@ -130,8 +154,28 @@ always_comb begin
     imm_u = {inst_reg[31:12], 12'b0};
 
     // instruction type
-    // TODO
-
+    if (opcode == LUI_OP) begin
+      // U type
+      instruction_type = type
+    end else if(opcode == BEQ_OP) begin
+      // B type
+      instruction_type = TYPE_B;
+    end else if(opcode == LB_OP) begin
+      // I type
+      instruction_type = TYPE_I;
+    end else if (opcode == SB_SW_OP) begin
+      // S type
+      instruction_type = TYPE_S;
+    end else if (opcode == ADDI_ANDI_OP) begin
+      // I type
+      instruction_type = TYPE_I;
+    end else if (opcode == ADD_OP) begin
+      // R type
+      instruction_type = TYPE_R;
+    end else begin
+      // error
+      instruction_type = 3'b0;;
+    end
 end
 
 // cpu
@@ -200,6 +244,20 @@ always_ff @ (posedge clk) begin
     wb_we_o <= 0;
 
     // reset internal registers
+    // instruction parse parameters
+    // general
+    opcode = 7'b0;
+    funct3 = 3'b0;
+    rd = 5'b0;
+    rs1 = 5'b0;
+    rs2 = 5'b0;
+    instruction_type = 3'b0;
+    // imm
+    imm_i = 12'b0;
+    imm_s = 12'b0;
+    imm_b = 13'b0;
+    imm_u = 32'b0;
+
     // TODO
 
 

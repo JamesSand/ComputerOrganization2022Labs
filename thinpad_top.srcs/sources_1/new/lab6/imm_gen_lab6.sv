@@ -9,13 +9,16 @@ module imm_gen_lab6(
     output reg [31:0] imm_o
 );
 
-typedef enum logic[1:0] { 
+typedef enum logic[2:0] { 
   TYPE_I = 0,
   TYPE_S = 1,
   TYPE_B = 2,
-  TYPE_R = 3
-} instruction_type;
+  TYPE_R = 3,
+  TYPE_U = 4
+} instr_type;
 
+
+// here I only implement unsign expand
 always_comb begin
     case(imm_gen_type)
         TYPE_I : begin
