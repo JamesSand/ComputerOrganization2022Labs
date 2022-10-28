@@ -18,19 +18,50 @@ module lab6_master #(
     output reg [DATA_WIDTH/8-1:0] wb_sel_o,
     output reg wb_we_o // 0 for read, 1 for write
 
-    // instruction load and parse
-
-    // register load
-
-    // execution
-
-    // write back
-
-
 );
 
 
 // lab6 code below
+
+// model instantiation
+
+// Register File & Controller
+logic [4:0] raddr_a;
+logic [15:0] rdata_a;
+logic [4:0] raddr_b;
+logic [15:0] rdata_b;
+logic [4:0] waddr;
+logic [15:0] wdata;
+logic we;
+
+register_file my_register_file(
+  .clk(clk_i),
+  .rst(rst_i),
+
+  .raddr_a(raddr_a),
+  .rdata_a(rdata_a),
+  .raddr_b(raddr_b),
+  .rdata_b(rdata_b),
+  
+  .waddr(waddr),
+  .wdata(wdata),
+  .we(we)
+);
+
+// ALU & controller
+logic [15:0] alu_a;
+logic [15:0] alu_b;
+logic [3:0] alu_op;
+logic [15:0] alu_y;
+
+alu my_alu(
+  .a(alu_a),
+  .b(alu_b),
+  .op(alu_op),
+  .y(alu_y)
+);
+
+// other signals and ff logics
 
 reg [31:0] pc_reg;
 reg [31:0] pc_now_reg;
