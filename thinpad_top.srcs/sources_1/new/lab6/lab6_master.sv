@@ -12,9 +12,9 @@ module lab6_master #(
     output reg wb_cyc_o, // start when both cyc and stb are 1
     output reg wb_stb_o, // start when both cyc and stb are 1
     input wire wb_ack_i, // ack signal
-    output reg [ADDR_WIDTH-1:0] wb_adr_o,
-    output reg [DATA_WIDTH-1:0] wb_dat_o,
-    input wire [DATA_WIDTH-1:0] wb_dat_i,
+    output reg [ADDR_WIDTH-1:0] wb_addr_o,
+    output reg [DATA_WIDTH-1:0] wb_data_o,
+    input wire [DATA_WIDTH-1:0] wb_data_i,
     output reg [DATA_WIDTH/8-1:0] wb_sel_o,
     output reg wb_we_o // 0 for read, 1 for write
 
@@ -27,11 +27,11 @@ module lab6_master #(
 
 // Register File & Controller
 logic [4:0] rf_raddr_a_o;
-logic [15:0] rf_rdata_a_i;
+logic [31:0] rf_rdata_a_i;
 logic [4:0] rf_raddr_b_o;
-logic [15:0] rf_rdata_b_i;
+logic [31:0] rf_rdata_b_i;
 logic [4:0] rf_waddr_o;
-logic [15:0] rf_wdata_o;
+logic [31:0] rf_wdata_o;
 logic rf_we_o;
 
 register_lab6 u_register_lab6(
@@ -49,10 +49,10 @@ register_lab6 u_register_lab6(
 );
 
 // ALU & controller
-logic [15:0] alu_a_o;
-logic [15:0] alu_b_o;
+logic [31:0] alu_a_o;
+logic [31:0] alu_b_o;
 logic [3:0] alu_op_o;
-logic [15:0] alu_y_i;
+logic [31:0] alu_y_i;
 
 alu_lab6 u_alu_lab6(
   .a(alu_a_o),
@@ -60,6 +60,38 @@ alu_lab6 u_alu_lab6(
   .op(alu_op_o),
   .y(alu_y_i)
 );
+
+// type enum
+// status machine
+typedef enum logic [1:0] {
+    STATE_IF = 0,
+    STATE_ID = 1,
+    STATE_EXE = 2,
+    STATE_WB = 3
+} state_t;
+
+state_t state;
+
+typedef enum logic [3:0]{
+  ALU_OP_ADD = 4'd1,
+  ALU_OP_SUB = 4'd2,
+  ALU_OP_AND = 4'd3,
+  ALU_OP_OR = 4'd4,
+  ALU_OP_XOR = 4'd5,
+  ALU_OP_NOT = 4'd6,
+  ALU_OP_SLL = 4'd7,
+  ALU_OP_SRL = 4'd8,
+  ALU_OP_SRA = 4'd9,
+  ALU_OP_ROL = 4'd10,
+  ALU_OP_SETB = 4'd11,
+} alu_op_type;
+
+typedef enum logic[1:0] { 
+  TYPE_I = 0,
+  TYPE_S = 1,
+  TYPE_B = 2,
+  TYPE_R = 3
+} instruction_type;
 
 // other signals and ff logics
 
@@ -97,64 +129,80 @@ always_comb begin
     imm_b = {inst_reg[31], inst_reg[7], inst_reg[30:25], inst_reg[11:8], 1'b0};
     imm_u = {inst_reg[31:12], 12'b0};
 
+    // instruction type
+    // TODO
+
 end
 
-// status machine
-// four states required
-typedef enum logic [3:0] {
-    STATE_IF = 0,
-    STATE_ID = 1,
-    STATE_EXE = 2,
-    STATE_WB = 3
-} state_t;
+// cpu
+always_comb begin
+    case(state)
+        STATE_IF: begin
+            wb_addr_o = pc_reg;
+            wb_cyc_o = 1'b1;
+            wb_stb_o = 1;
+            alu_operand1_o = pc_reg;
+            alu_operand2_o = 32'h00000004;
+            alu_op_o = ALU_OP_ADD;
+        end
 
-state_t state;
+        STATE_ID : begin
 
-// // cpu
-// always_comb begin
-//     ...
-//     case(state)
-//         STATE_IF: begin
-//             wb_addr_o = pc_reg;
-//             wb_cyc_o = 1'b1;
-//             // stb ?
-//             wb_stb_o = 1;
-//             alu_operand1_o = pc_reg;
-//             alu_operand2_o = 32'h00000004;
-//             alu_op_o = ALU_ADD;
-//         end
+          rf_raddr_a_o = <instruction rs1 segment>;
+          rf_raddr_b_o = <instruction rs2 segment>;
+          imm_gen_inst_o = <instrction segment to generate immediate>;
+          if(<instruction is type I>) begin
+              imm_gen_type_o = TYPE_I;
+          end 
+        
+        STATE_EXE: begin
+          alu_operand1_o = operand1;
+          alu_operand2_o = operand2;
+          if(<instruction is ADDI>) begin
+              alu_op_o = ALU_ADD;
+          end 
 
-//         STATE_ID : begin
+        end
 
-//           rf_raddr_a_o = <instruction rs1 segment>;
-//           rf_raddr_b_o = <instruction rs2 segment>;
-//           imm_gen_inst_o = <instrction segment to generate immediate>;
-//           if(<instruction is type I>) begin
-//               imm_gen_type_o = TYPE_I;
-//           end 
-//           ...
+        STATE_WB: begin
+            rf_wen_o = 1'b1;
+            rf_wdata_o = rf_writeback_reg;
+            rf_waddr_o = <rd segment of instruction>
+            ...
+        end
 
 
-//         end
+        end
+    endcase
+end
 
-//         STATE_EXE : begin
-
-//         end
-
-//         STATE_WB : begin
-
-//         end
-//     endcase
-// end
 always_ff @ (posedge clk) begin
   if (rst_i) begin
     // reset all signals
 
     // reset model instantiation signals
-    rf_raddr_a_o = 5'b0;
-    rf_raddr_b_o = 5'b0;
-    rf_waddr_o = 5'b0;
-    rf_wdata_o = 16'b0;
+    rf_raddr_a_o <= 5'b0;
+    rf_raddr_b_o <= 5'b0;
+    rf_waddr_o <= 5'b0;
+    rf_wdata_o <= 32'b0;
+    rf_we_o <= 0;
+
+    alu_a_o <= 32'b0;
+    alu_b_o <= 32'b0;
+    alu_op_o <= 4'b0;
+
+    // reset wishbone master
+    wb_cyc_o <= 0;
+    wb_stb_o <= 0;
+    wb_addr_o <= 32'b0;
+    wb_data_o <= 32'b0;
+    wb_sel_o <= 4'b0;
+    wb_we_o <= 0;
+
+    // reset internal registers
+    // TODO
+
+
   end else begin
     case(state)
       STATE_IF: begin
@@ -180,12 +228,16 @@ always_ff @ (posedge clk) begin
 
       end
 
-      STATE_EXE : begin
+      STATE_EXE: begin
+        if(<instruction is ADDI>) begin
+            rf_writeback_reg <= alu_result_i;
+            state <= STATE_WB;
+        end
 
       end
 
-      STATE_WB : begin
-
+      STATE_WB: begin
+        state <= STATE_IF;
       end
     endcase
   end
