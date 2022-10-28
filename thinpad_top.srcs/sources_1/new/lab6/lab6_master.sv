@@ -26,39 +26,39 @@ module lab6_master #(
 // model instantiation
 
 // Register File & Controller
-logic [4:0] raddr_a;
-logic [15:0] rdata_a;
-logic [4:0] raddr_b;
-logic [15:0] rdata_b;
-logic [4:0] waddr;
-logic [15:0] wdata;
-logic we;
+logic [4:0] rf_raddr_a_o;
+logic [15:0] rf_rdata_a_i;
+logic [4:0] rf_raddr_b_o;
+logic [15:0] rf_rdata_b_i;
+logic [4:0] rf_waddr_o;
+logic [15:0] rf_wdata_o;
+logic rf_we_o;
 
-register_file my_register_file(
+register_lab6 u_register_lab6(
   .clk(clk_i),
   .rst(rst_i),
 
-  .raddr_a(raddr_a),
-  .rdata_a(rdata_a),
-  .raddr_b(raddr_b),
-  .rdata_b(rdata_b),
+  .raddr_a(rf_raddr_a_o),
+  .rdata_a(rf_rdata_a_i),
+  .raddr_b(rf_raddr_b_o),
+  .rdata_b(rf_rdata_b_i),
   
-  .waddr(waddr),
-  .wdata(wdata),
-  .we(we)
+  .waddr(rf_waddr_o),
+  .wdata(rf_wdata_o),
+  .we(rf_we_o)
 );
 
 // ALU & controller
-logic [15:0] alu_a;
-logic [15:0] alu_b;
-logic [3:0] alu_op;
-logic [15:0] alu_y;
+logic [15:0] alu_a_o;
+logic [15:0] alu_b_o;
+logic [3:0] alu_op_o;
+logic [15:0] alu_y_i;
 
-alu my_alu(
-  .a(alu_a),
-  .b(alu_b),
-  .op(alu_op),
-  .y(alu_y)
+alu_lab6 u_alu_lab6(
+  .a(alu_a_o),
+  .b(alu_b_o),
+  .op(alu_op_o),
+  .y(alu_y_i)
 );
 
 // other signals and ff logics
@@ -149,7 +149,12 @@ state_t state;
 always_ff @ (posedge clk) begin
   if (rst_i) begin
     // reset all signals
-    ...
+
+    // reset model instantiation signals
+    rf_raddr_a_o = 5'b0;
+    rf_raddr_b_o = 5'b0;
+    rf_waddr_o = 5'b0;
+    rf_wdata_o = 16'b0;
   end else begin
     case(state)
       STATE_IF: begin
