@@ -154,28 +154,39 @@ always_comb begin
     imm_u = {inst_reg[31:12], 12'b0};
 
     // instruction type
-    if (opcode == LUI_OP) begin
-      // U type
-      instruction_type = type
-    end else if(opcode == BEQ_OP) begin
-      // B type
-      instruction_type = TYPE_B;
-    end else if(opcode == LB_OP) begin
-      // I type
-      instruction_type = TYPE_I;
-    end else if (opcode == SB_SW_OP) begin
-      // S type
-      instruction_type = TYPE_S;
-    end else if (opcode == ADDI_ANDI_OP) begin
-      // I type
-      instruction_type = TYPE_I;
-    end else if (opcode == ADD_OP) begin
-      // R type
-      instruction_type = TYPE_R;
-    end else begin
-      // error
-      instruction_type = 3'b0;;
-    end
+
+    case(opcode) 
+      LUI_OP : begin
+        // U type
+        instruction_type = type
+      end
+
+      BEQ_OP :begin
+        // B type
+        instruction_type = TYPE_B;
+      end
+
+      LB_OP : begin
+        // I type
+        instruction_type = TYPE_I;
+      end
+
+      SB_SW_OP : begin
+        // S type
+        instruction_type = TYPE_S;
+      end
+
+      ADDI_ANDI_OP : begin
+        // I type
+        instruction_type = TYPE_I;
+      end
+
+      ADD_OP : begin
+        // R type
+        instruction_type = TYPE_R;
+      end
+
+    endcase
 end
 
 // cpu
@@ -185,9 +196,9 @@ always_comb begin
             wb_addr_o = pc_reg;
             wb_cyc_o = 1'b1;
             wb_stb_o = 1;
-            alu_operand1_o = pc_reg;
-            alu_operand2_o = 32'h00000004;
-            alu_op_o = ALU_OP_ADD;
+            // alu_operand1_o = pc_reg;
+            // alu_operand2_o = 32'h00000004;
+            // alu_op_o = ALU_OP_ADD;
         end
 
         STATE_ID : begin
@@ -259,22 +270,64 @@ always_ff @ (posedge clk) begin
     imm_u = 32'b0;
 
     // TODO
+    // other signals if need
 
 
   end else begin
     case(state)
       STATE_IF: begin
-          inst_reg <= wb_data_i; // here can do so, because state if will only wait until ack = 1 to jump to state id
-          pc_now_reg <= pc_reg;
-          ...
           if (wb_ack_i) begin
-              pc_reg <= alu_result_i; // 注意更新的位置, wishbone请求时, addr地址不能变
+              pc_reg <= pc_reg + 4; // 注意更新的位置, wishbone请求时, addr地址不能变
+              inst_reg <= wb_data_i; // here can do so, because state if will only wait until ack = 1 to jump to state id
+              pc_now_reg <= pc_reg;
               state <= STATE_ID;
+          end else begin
+              state <= STATE_IF;
           end
-      ...
       end
 
       STATE_ID :begin
+
+        case(instruction_type)
+
+          TYPE_I : begin
+            // addi, andi
+            if (funct3 == 3'b000) begin
+              // addi
+              
+            end else begin
+              // andi, funct3 = 111
+
+            end
+          end
+
+          TYPE_S : begin
+            // sw, sb
+            if (funct3 == 3'b000) begin
+              // sb
+
+            end else begin
+              // sw funct3 = 010
+              
+            end
+          end
+
+          TYPE_B : begin
+            // beq
+            
+          end
+
+          TYPE_R : begin
+            // add
+            
+          end
+
+          TYPE_U : begin
+            // lui
+            
+          end
+
+        endcase
 
         if(<instruction is ADDI>) begin
             operand1_reg <= rf_rdata_a_i;
