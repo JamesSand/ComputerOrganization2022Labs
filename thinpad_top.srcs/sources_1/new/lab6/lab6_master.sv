@@ -297,9 +297,9 @@ always_ff @ (posedge clk) begin
     // register file
     rf_raddr_a_o <= 5'b0;
     rf_raddr_b_o <= 5'b0;
-    rf_waddr_o <= 5'b0;
-    rf_wdata_o <= 32'b0;
-    rf_we_o <= 0;
+    // rf_waddr_o <= 5'b0;
+    // rf_wdata_o <= 32'b0;
+    // rf_we_o <= 0;
 
     // // alu
     // alu_a_o <= 32'b0;
@@ -325,20 +325,14 @@ always_ff @ (posedge clk) begin
 
     state <= STATE_IF;
 
-
-    // // general
-    // opcode = 7'b0;
-    // funct3 = 3'b0;
-    // rd = 5'b0;
-    // rs1 = 5'b0;
-    // rs2 = 5'b0;
-    // instruction_type = 3'b0;
-    // // imm
-    // imm_i = 12'b0;
-    // imm_s = 12'b0;
-    // imm_b = 13'b0;
-    // imm_u = 32'b0;
-
+    if_wirte_reg <= 0;
+    write_reg_addr_o <= 5'b0;
+    write_reg_data_o <= 32'b0;
+    
+    if_write_sram <= 0;
+    write_sram_addr_o <= 32'b0;
+    write_sram_data_o <= 32'b0;
+    write_sram_sel_o <= 4'b0;
 
 
   end else begin
@@ -452,7 +446,13 @@ always_ff @ (posedge clk) begin
             wb_sel_o <= 4'b0000;
             // reset write signals
             if_wirte_reg <= 0;
+            write_reg_addr_o <= 5'b0;
+            write_reg_data_o <= 32'b0;
+            
             if_write_sram <= 0;
+            write_sram_addr_o <= 32'b0;
+            write_sram_data_o <= 32'b0;
+            write_sram_sel_o <= 4'b0;
             state <= STATE_IF;
           end else begin
             // set signals
@@ -466,11 +466,15 @@ always_ff @ (posedge clk) begin
           // do not need to write sram
           // reset write signals
           if_wirte_reg <= 0;
+          write_reg_addr_o <= 5'b0;
+          write_reg_data_o <= 32'b0;
+          
           if_write_sram <= 0;
+          write_sram_addr_o <= 32'b0;
+          write_sram_data_o <= 32'b0;
+          write_sram_sel_o <= 4'b0;
           state <= STATE_IF;
         end
-        
-
         
       end
     endcase
