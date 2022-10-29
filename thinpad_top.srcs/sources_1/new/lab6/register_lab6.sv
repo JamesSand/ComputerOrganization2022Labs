@@ -19,8 +19,21 @@ logic [31:0] regs[31:0];
 
 
 always_comb begin
-    rdata_a <= regs[raddr_a];
-    rdata_b <= regs[raddr_b];
+    rdata_a <= 32'b0;
+    rdata_b <= 32'b0;
+
+    if (raddr_a >= 5'b0) begin
+        if (raddr_a < 5'd32) begin
+            rdata_a <= regs[raddr_a];
+        end
+    end
+
+    if (raddr_b >= 5'b0) begin
+        if (raddr_b < 5'd32) begin
+            rdata_b <= regs[raddr_b];
+        end
+    end
+
 end
 
 always_ff @(posedge clk) begin

@@ -30,6 +30,7 @@ logic [4:0] rf_raddr_a_o;
 logic [31:0] rf_rdata_a_i;
 logic [4:0] rf_raddr_b_o;
 logic [31:0] rf_rdata_b_i;
+
 logic [4:0] rf_waddr_o;
 logic [31:0] rf_wdata_o;
 logic rf_we_o;
@@ -49,16 +50,16 @@ register_lab6 u_register_lab6(
 );
 
 // ALU & controller
-logic [31:0] alu_a_o;
-logic [31:0] alu_b_o;
+logic [31:0] alu_operand1_o;
+logic [31:0] alu_operand2_o;
 logic [3:0] alu_op_o;
-logic [31:0] alu_y_i;
+logic [31:0] alu_result_i;
 
 alu_lab6 u_alu_lab6(
-  .a(alu_a_o),
-  .b(alu_b_o),
+  .a(alu_operand1_o),
+  .b(alu_operand2_o),
   .op(alu_op_o),
-  .y(alu_y_i)
+  .y(alu_result_i)
 );
 
 // type enum
@@ -106,9 +107,25 @@ typedef enum logic[2:0] {
 
 // other signals and ff logics
 
+// IF stage
 reg [31:0] pc_reg;
 reg [31:0] pc_now_reg;
 reg [31:0] inst_reg;
+
+
+// ID stage
+logic [31:0] rs1_value;
+logic [31:0] rs2_value;
+
+// EXE stage
+logic if_wirte_reg; // 1 for write back, 0 for not
+logic [31:0] write_reg_data_o;
+logic [4:0] write_reg_addr_o;
+
+logic if_write_sram;
+logic [31:0] write_sram_data_o;
+logic [31:0] write_sram_addr_o;
+logic [3:0] write_sram_sel_o;
 
 // instruction parser
 logic [6:0] opcode;
@@ -122,7 +139,7 @@ logic [11:0] imm_s;
 logic [12:0] imm_b;
 logic [31:0] imm_u;
 
-logic [31:0] imm_gen_i;
+logic [31:0] imm_gen_result_i;
 
 imm_gen_lab6 u_imm_gen_lab6(
   .imm_i(imm_i),
@@ -130,7 +147,7 @@ imm_gen_lab6 u_imm_gen_lab6(
   .imm_b(imm_b),
   .imm_gen_type(instruction_type),
 
-  .imm_o(imm_gen_i)
+  .imm_o(imm_gen_result_i)
 );
 
 
@@ -189,46 +206,87 @@ always_comb begin
     endcase
 end
 
-// cpu
+// cpu combination
 always_comb begin
-    case(state)
-        STATE_IF: begin
-            wb_addr_o = pc_reg;
-            wb_cyc_o = 1'b1;
-            wb_stb_o = 1;
-            // alu_operand1_o = pc_reg;
-            // alu_operand2_o = 32'h00000004;
-            // alu_op_o = ALU_OP_ADD;
+  alu_operand1_o = 32'b0;
+  alu_operand2_o = 32'b0;
+  alu_op_o = 4'b0;
+  rf_waddr_o = 5'b0;
+  rf_wdata_o = 32'b0;
+  rf_we_o = 0;
+
+  case(state)
+    STATE_EXE : begin
+      case(instruction_type)
+        TYPE_I : begin
+          // addi, andi
+          alu_operand1_o = rs1_value;
+          alu_operand2_o = imm_gen_result_i;
+          if (funct3 == 3'b000) begin
+            // addi
+            alu_op_o = ALU_OP_ADD;
+          end else begin
+            // andi, funct3 = 111
+            alu_op_o = ALU_OP_AND;
+          end
         end
 
-        STATE_ID : begin
-
-          rf_raddr_a_o = <instruction rs1 segment>;
-          rf_raddr_b_o = <instruction rs2 segment>;
-          imm_gen_inst_o = <instrction segment to generate immediate>;
-          if(<instruction is type I>) begin
-              imm_gen_type_o = TYPE_I;
-          end 
-        
-        STATE_EXE: begin
-          alu_operand1_o = operand1;
-          alu_operand2_o = operand2;
-          if(<instruction is ADDI>) begin
-              alu_op_o = ALU_ADD;
-          end 
-
+        TYPE_S : begin
+          // sw, sb
+          // calculate address
+          alu_operand1_o = rs1_value;
+          alu_operand2_o = imm_gen_result_i;
+          alu_op_o = ALU_OP_ADD;
         end
 
-        STATE_WB: begin
-            rf_wen_o = 1'b1;
-            rf_wdata_o = rf_writeback_reg;
-            rf_waddr_o = <rd segment of instruction>
-            ...
+        TYPE_B : begin
+          // beq
+          alu_operand1_o = pc_now_reg;
+          alu_operand2_o = imm_gen_result_i;
+          alu_op_o = ALU_OP_ADD;
         end
 
-
+        TYPE_R : begin
+          // add
+          alu_operand1_o = rs1_value;
+          alu_operand2_o = rs2_value;
+          alu_op_o = ALU_OP_ADD;
         end
-    endcase
+
+        // TYPE_U : begin
+        //   // lui
+        //   // do nothing here
+        // end
+
+        // default : begin
+        //   alu_operand1_o = 32'b0;
+        //   alu_operand2_o = 32'b0;
+        //   alu_op_o = 4'b0;
+        // end
+      endcase
+
+    STATE_WB : begin
+      rf_waddr_o = 5'b0;
+      rf_wdata_o = 32'b0;
+      rf_we_o = 0;
+
+      if (if_wirte_reg) begin
+        rf_waddr_o = write_reg_addr_o;
+        rf_wdata_o = write_reg_data_o;
+        rf_we_o = 1;
+      end
+
+    end
+
+    // default : begin
+    //   alu_operand1_o = 32'b0;
+    //   alu_operand2_o = 32'b0;
+    //   alu_op_o = 4'b0;
+    //   rf_waddr_o = 5'b0;
+    //   rf_wdata_o = 32'b0;
+    //   rf_we_o = 0;
+    // end
+  endcase
 end
 
 always_ff @ (posedge clk) begin
@@ -236,15 +294,20 @@ always_ff @ (posedge clk) begin
     // reset all signals
 
     // reset model instantiation signals
+    // register file
     rf_raddr_a_o <= 5'b0;
     rf_raddr_b_o <= 5'b0;
     rf_waddr_o <= 5'b0;
     rf_wdata_o <= 32'b0;
     rf_we_o <= 0;
 
-    alu_a_o <= 32'b0;
-    alu_b_o <= 32'b0;
-    alu_op_o <= 4'b0;
+    // // alu
+    // alu_a_o <= 32'b0;
+    // alu_b_o <= 32'b0;
+    // alu_op_o <= 4'b0;
+
+    // imm generater
+    // nothing to do here
 
     // reset wishbone master
     wb_cyc_o <= 0;
@@ -255,31 +318,48 @@ always_ff @ (posedge clk) begin
     wb_we_o <= 0;
 
     // reset internal registers
-    // instruction parse parameters
-    // general
-    opcode = 7'b0;
-    funct3 = 3'b0;
-    rd = 5'b0;
-    rs1 = 5'b0;
-    rs2 = 5'b0;
-    instruction_type = 3'b0;
-    // imm
-    imm_i = 12'b0;
-    imm_s = 12'b0;
-    imm_b = 13'b0;
-    imm_u = 32'b0;
 
-    // TODO
-    // other signals if need
+    pc_reg <= 32'h8000_0000;
+    pc_now_reg <= 32'h8000_0000;
+    inst_reg <= 32'b0;
+
+    state <= STATE_IF;
+
+
+    // // general
+    // opcode = 7'b0;
+    // funct3 = 3'b0;
+    // rd = 5'b0;
+    // rs1 = 5'b0;
+    // rs2 = 5'b0;
+    // instruction_type = 3'b0;
+    // // imm
+    // imm_i = 12'b0;
+    // imm_s = 12'b0;
+    // imm_b = 13'b0;
+    // imm_u = 32'b0;
+
 
 
   end else begin
     case(state)
       STATE_IF: begin
+          wb_addr_o <= pc_reg;
+          wb_cyc_o <= 1'b1;
+          wb_stb_o <= 1;
+          wb_we_o <= 0; // read
+          wb_sel_o <= 4'b1111; // read 4 bytes
+
           if (wb_ack_i) begin
               pc_reg <= pc_reg + 4; // 注意更新的位置, wishbone请求时, addr地址不能变
-              inst_reg <= wb_data_i; // here can do so, because state if will only wait until ack = 1 to jump to state id
+              inst_reg <= wb_data_i; 
               pc_now_reg <= pc_reg;
+
+              // close operation code
+              wb_cyc_o <= 0;
+              wb_stb_o <= 0;
+              wb_sel_o <= 4'b0000;
+
               state <= STATE_ID;
           end else begin
               state <= STATE_IF;
@@ -287,281 +367,114 @@ always_ff @ (posedge clk) begin
       end
 
       STATE_ID :begin
+        rf_raddr_a_o <= rs1;
+        rs1_value <= rf_rdata_a_i;
+        rf_raddr_b_o <= rs2;
+        rf_rdata_b_i <= rf_rdata_b_i;
+        state <= STATE_EXE;
+      end
+
+      STATE_EXE: begin
+
+        state <= STATE_WB;
 
         case(instruction_type)
-
           TYPE_I : begin
             // addi, andi
-            if (funct3 == 3'b000) begin
-              // addi
-              
-            end else begin
-              // andi, funct3 = 111
-
-            end
+            if_wirte_reg <= 1;
+            write_reg_data_o <= alu_result_i;
+            write_reg_addr_o <= rd;
           end
 
           TYPE_S : begin
+            // store rs2 data to rs1 position
+            if_write_sram <= 1;
+            write_sram_data_o <= rs2_value;
+            write_sram_addr_o <= alu_result_i;
+
             // sw, sb
             if (funct3 == 3'b000) begin
               // sb
-
+              write_sram_sel_o <= 4'b0001;
             end else begin
               // sw funct3 = 010
-              
+              write_sram_sel_o <= 4'b1111;
             end
           end
 
           TYPE_B : begin
             // beq
-            
+
+            // 由于RISC-V指令长度必须是两个字节的倍数，
+            // 分支指令的寻址方式是12位的立即数乘以2，符号扩展，
+            // 然后加到PC上作为分支的跳转地址。
+
+            if (rs1_value == rs2_value) begin
+              pc_reg <= alu_result_i;
+            end
           end
 
           TYPE_R : begin
             // add
-            
+            if_wirte_reg <= 1;
+            write_reg_data_o <= alu_result_i;
+            write_reg_addr_o <= rd;
+
           end
 
           TYPE_U : begin
             // lui
-            
+            if_wirte_reg <= 1;
+            write_reg_data_o <= imm_gen_result_i;
+            write_reg_addr_o <= rd;
+          end
+
+          default : begin
+            if_wirte_reg <= 0;
+            if_write_sram <= 0;
           end
 
         endcase
 
-        if(<instruction is ADDI>) begin
-            operand1_reg <= rf_rdata_a_i;
-            operand2_reg <= imm_gen_imm_i;
-        end
-        ...
-        state <= STATE_EXE;
-
-
-      end
-
-      STATE_EXE: begin
-        if(<instruction is ADDI>) begin
-            rf_writeback_reg <= alu_result_i;
-            state <= STATE_WB;
-        end
-
       end
 
       STATE_WB: begin
-        state <= STATE_IF;
+        // write reg down in combination logic
+        // only need 1 circle
+
+        // write sram will be done here
+        if (if_write_sram) begin
+          if (wb_ack_i) begin
+            // write done
+            // close operation code
+            wb_cyc_o <= 0;
+            wb_stb_o <= 0;
+            wb_sel_o <= 4'b0000;
+            // reset write signals
+            if_wirte_reg <= 0;
+            if_write_sram <= 0;
+            state <= STATE_IF;
+          end else begin
+            // set signals
+            wb_cyc_o <= 1;
+            wb_stb_o <= 1;
+            wb_sel_o <= write_sram_sel_o;
+            wb_addr_o <= write_sram_addr_o;
+            wb_data_o <= write_sram_data_o;
+          end
+        end else begin
+          // do not need to write sram
+          // reset write signals
+          if_wirte_reg <= 0;
+          if_write_sram <= 0;
+          state <= STATE_IF;
+        end
+        
+
+        
       end
     endcase
   end
 end                    
-
-
-// lab5 code below
-
-
-
-reg [3 : 0] counter;
-reg [31 : 0] addr_reg; 
-
-// additional reg
-reg read_able;
-reg write_able;
-reg [7 : 0] read_data;
-
-always_ff @( posedge clk_i ) begin
-  if (rst_i) begin
-    // reset all signal
-    state <= READ_WAIT_ACTION;
-
-    // reset output signal
-    wb_cyc_o <= 0;
-    wb_stb_o <= 0;
-    wb_adr_o <= 32'b0;
-    wb_dat_o <= 32'b0;
-    wb_sel_o <= 4'b0;
-    wb_we_o <= 0;
-
-    // get address
-    // addr_reg <= (addr_i & 32'hFFFFFFFC);
-    addr_reg <= {addr_i[31 : 2] , 2'b0};
-
-    // reset counter
-    counter <= 4'd0;
-    read_able <= 0;
-    write_able <= 0;
-    read_data <= 32'b0;
-
-  end else begin
-      case (state)
-        // read uart
-        READ_WAIT_ACTION: begin
-          // 读串口需要循环读取串口控制器的状态寄存器
-          // （地�?�? 0x1000_0005�?
-
-          // check ack
-          if (wb_ack_i == 1) begin
-            // 0x10000005	[0]	只读�?
-            // �? 1 时表示串口收到数�?
-            read_able <= wb_dat_i[0];
-            // read signal check
-            state <= READ_WAIT_CHECK;
-            // close operation code
-            wb_cyc_o <= 0;
-            wb_stb_o <= 0;
-            wb_sel_o <= 4'b0000;
-          end else begin
-            // wait for ack
-            wb_adr_o <= 32'h1000_0005;
-            wb_we_o <= 0; // read
-            wb_sel_o <= 4'b1111;
-            // operation code
-            wb_cyc_o <= 1;
-            wb_stb_o <= 1;
-            // keep wait for ack
-            state <= READ_WAIT_ACTION;
-          end
-        end
-
-        READ_WAIT_CHECK: begin
-          if (read_able == 1) begin
-            // start to read
-            state <= READ_DATA_ACTION;
-          end else begin
-            // can not read 
-            state <= READ_WAIT_ACTION;
-          end
-        end
-
-        READ_DATA_ACTION: begin
-          // check ack
-          if (wb_ack_i == 1) begin
-            // close operation code
-            wb_cyc_o <= 0;
-            wb_stb_o <= 0;
-            wb_sel_o <= 4'b0000;
-            // save data
-            read_data <= wb_dat_i[7 : 0];
-            // read data done
-            state <= READ_DATA_DONE;
-          end else begin
-            // 0x10000000	[7:0]	串口数据�?
-            // 读�?�写地址分别表示串口接收、发送一个字�?
-            // wait for ack
-            wb_adr_o <= 32'h1000_0000;
-            wb_we_o <= 0; // read
-            wb_sel_o <= 4'b0001;
-            // operation code
-            wb_cyc_o <= 1;
-            wb_stb_o <= 1;
-            // keep wait for ack
-            state <= READ_DATA_ACTION;
-          end
-        end
-
-        READ_DATA_DONE: begin
-          // write read data to sram
-          state <= WRITE_SRAM_ACTION;
-          // read able reg done
-          read_able <= 0;
-        end
-
-        // write sram
-        WRITE_SRAM_ACTION: begin
-          // check ack
-          if (wb_ack_i == 1) begin
-            // write sram done
-            // add 4 to addr
-            addr_reg <= addr_reg + 32'd4;
-            // close operation code
-            wb_cyc_o <= 0;
-            wb_stb_o <= 0;
-            wb_sel_o <= 4'b0000;
-
-            state <= WRITE_SRAM_DONE;
-          end else begin
-            // wait for ack
-            wb_adr_o <= addr_reg;
-            wb_we_o <= 1; // write
-            wb_dat_o <= read_data; // write data
-            wb_sel_o <= 4'b0001;
-            // operation code
-            wb_cyc_o <= 1;
-            wb_stb_o <= 1;
-            // keep wait ack
-            state <= WRITE_SRAM_ACTION;
-          end
-        end
-
-        WRITE_SRAM_DONE: begin
-          // write back to uart
-          state <= WRITE_WAIT_ACTION;
-        end
-
-        // write uart
-        WRITE_WAIT_ACTION: begin
-          // 0x10000005	[5]	只读�?
-          // �? 1 时表示串口空闲，可发送数�?
-          // check ack
-          if (wb_ack_i == 1) begin
-            write_able <= wb_dat_i[5];
-            state <= WRITE_WAIT_CHECK;
-            // close operation code
-            wb_cyc_o <= 0;
-            wb_stb_o <= 0;
-            wb_sel_o <= 4'b0000;
-          end else begin
-            // wait for ack
-            wb_adr_o <= 32'h1000_0005;
-            wb_we_o <= 0; // read
-             wb_sel_o <= 4'b1111;
-            // operation code
-            wb_cyc_o <= 1;
-            wb_stb_o <= 1;
-            state <= WRITE_WAIT_ACTION;
-          end
-        end
-
-        WRITE_WAIT_CHECK: begin
-          if (write_able == 1) begin
-            state <= WRITE_DATA_ACTION;
-          end else begin
-            state <= WRITE_WAIT_ACTION;
-          end
-        end
-
-        WRITE_DATA_ACTION: begin
-          if(wb_ack_i == 1) begin
-            // close operation code
-            wb_cyc_o <= 0;
-            wb_stb_o <= 0;
-            wb_sel_o <= 4'b0000;
-            state <= WRITE_DATA_DONE;
-          end else begin
-            wb_adr_o <= 32'h1000_0000;
-            wb_we_o <= 1; // write
-            wb_dat_o <= read_data;
-            wb_sel_o <= 4'b0001;
-            // operation code
-            wb_cyc_o <= 1;
-            wb_stb_o <= 1;
-            // keep wait for ack
-            state <= WRITE_DATA_ACTION;
-          end
-        end
-
-        WRITE_DATA_DONE: begin
-          // write able done
-          write_able <= 0;
-          if (counter < 4'd10) begin
-            state <= READ_WAIT_ACTION;
-            counter <= counter + 4'd1;
-          end else begin
-            // all done
-            state <= WRITE_DATA_DONE;
-          end
-        end
-
-      endcase
-    end
-end
 
 endmodule

@@ -22,19 +22,36 @@ typedef enum logic[2:0] {
 always_comb begin
     case(imm_gen_type)
         TYPE_I : begin
-            imm_o = { 20'b0, imm_i };
+            if (imm_s[11] == 0) begin
+                imm_o = { 20'b0, imm_i };
+            end else begin
+                imm_o = { 20'hfffff, imm_i };
+            end
         end
 
         TYPE_S : begin
-            imm_o = { 20'b0, imm_s };
+            if (imm_s[11] == 0) begin
+                imm_o = { 20'b0, imm_s };
+            end else begin
+                imm_o = { 20'hfffff, imm_s };
+            end
         end
 
         TYPE_B : begin
-            imm_o = { 19'b0, imm_s };
+            // 由于RISC-V指令长度必须是两个字节的倍数，
+            // 分支指令的寻址方式是12位的立即数乘以2，符号扩展，
+            // 然后加到PC上作为分支的跳转地址。
+            // 18 + 13 + 1
+            if (imm_b[12] == 0) begin
+                imm_o = { 18'b0, imm_b , 1'b0};
+            end else begin
+                imm_o = { 16'hffff, 2'b11 , imm_b , 1'b0};
+            end
+            
         end
 
         default : begin
-            imm_o = 31'b0;
+            imm_o = 32'b0;
         end
 
     endcase
