@@ -320,6 +320,11 @@ always_ff @ (posedge clk_i) begin
 
     // reset internal registers
 
+    instruction_type <= 3'b0;
+    // reset rs1 value and rs2 value
+    rs1_value <= 32'b0;
+    rs2_value <= 32'b0;
+
     pc_reg <= 32'h8000_0000;
     pc_now_reg <= 32'h8000_0000;
     inst_reg <= 32'b0;
@@ -346,7 +351,7 @@ always_ff @ (posedge clk_i) begin
           wb_sel_o <= 4'b1111; // read 4 bytes
 
           if (wb_ack_i) begin
-              pc_reg <= pc_reg + 4; // 注意更新的位�?, wishbone请求�?, addr地址不能�?
+              pc_reg <= pc_reg + 4; // 注意更新的位�?, wishbone请求�?, addr地址不能�?
               inst_reg <= wb_data_i; 
               pc_now_reg <= pc_reg;
 
@@ -400,9 +405,9 @@ always_ff @ (posedge clk_i) begin
           TYPE_B : begin
             // beq
 
-            // 由于RISC-V指令长度必须是两个字节的倍数�?
-            // 分支指令的寻�?方式�?12位的立即数乘�?2，符号扩展，
-            // 然后加到PC上作为分支的跳转地址�?
+            // 由于RISC-V指令长度必须是两个字节的倍数�?
+            // 分支指令的寻�?方式�?12位的立即数乘�?2，符号扩展，
+            // 然后加到PC上作为分支的跳转地址�?
 
             if (rs1_value == rs2_value) begin
               pc_reg <= alu_result_i;
