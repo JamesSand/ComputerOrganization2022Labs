@@ -84,7 +84,7 @@ typedef enum logic [3:0]{
   ALU_OP_SRL = 4'd8,
   ALU_OP_SRA = 4'd9,
   ALU_OP_ROL = 4'd10,
-  ALU_OP_SETB = 4'd11,
+  ALU_OP_SETB = 4'd11
 } alu_op_type;
 
 // instruction opcode
@@ -175,7 +175,7 @@ always_comb begin
     case(opcode) 
       LUI_OP : begin
         // U type
-        instruction_type = type
+        instruction_type = TYPE_U;
       end
 
       BEQ_OP :begin
@@ -264,6 +264,7 @@ always_comb begin
         //   alu_op_o = 4'b0;
         // end
       endcase
+     end
 
     STATE_WB : begin
       rf_waddr_o = 5'b0;
@@ -289,7 +290,7 @@ always_comb begin
   endcase
 end
 
-always_ff @ (posedge clk) begin
+always_ff @ (posedge clk_i) begin
   if (rst_i) begin
     // reset all signals
 
@@ -345,7 +346,7 @@ always_ff @ (posedge clk) begin
           wb_sel_o <= 4'b1111; // read 4 bytes
 
           if (wb_ack_i) begin
-              pc_reg <= pc_reg + 4; // 注意更新的位置, wishbone请求时, addr地址不能变
+              pc_reg <= pc_reg + 4; // 注意更新的位�?, wishbone请求�?, addr地址不能�?
               inst_reg <= wb_data_i; 
               pc_now_reg <= pc_reg;
 
@@ -399,9 +400,9 @@ always_ff @ (posedge clk) begin
           TYPE_B : begin
             // beq
 
-            // 由于RISC-V指令长度必须是两个字节的倍数，
-            // 分支指令的寻址方式是12位的立即数乘以2，符号扩展，
-            // 然后加到PC上作为分支的跳转地址。
+            // 由于RISC-V指令长度必须是两个字节的倍数�?
+            // 分支指令的寻�?方式�?12位的立即数乘�?2，符号扩展，
+            // 然后加到PC上作为分支的跳转地址�?
 
             if (rs1_value == rs2_value) begin
               pc_reg <= alu_result_i;

@@ -38,9 +38,9 @@ end
 
 always_ff @(posedge clk) begin
     if (rst) begin
-        // 输出线清零
-        rdata_a <= 32'b0;
-        rdata_b <= 32'b0;
+        // // 输出线清零
+        // rdata_a <= 32'b0;
+        // rdata_b <= 32'b0;
         // 寄存器置零
         for (integer i = 0; i < 32; i++) begin
             regs[i] <= 32'b0;
