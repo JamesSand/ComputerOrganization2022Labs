@@ -43,9 +43,9 @@ always_comb begin
             // 然后加到PC上作为分支的跳转地址。
             // 18 + 13 + 1
             if (imm_b[12] == 0) begin
-                imm_o = { 18'b0, imm_b , 1'b0};
+                imm_o = { 19'b0, imm_b};
             end else begin
-                imm_o = { 16'hffff, 2'b11 , imm_b , 1'b0};
+                imm_o = { 16'hffff, 3'b111 , imm_b };
             end
             
         end
